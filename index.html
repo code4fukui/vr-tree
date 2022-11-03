@@ -1,26 +1,42 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>boxcraft simplest for Oculus Quest</title>
-<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<title>vr-tree</title>
+<script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+<!-- controller couldn't works on 1.3.0 for -->
+</head><body>
+<a-scene id="scene">
+  <a-assets>
+    <img id="tex_0" src="./img/soil.png">
+    <img id="tex_1" src="./img/dry.png">
+    <img id="tex_2" src="./img/leaf.png">
+    <img id="tex_3" src="./img/grass.png">
+  </a-assets>
+	<a-entity id="handr" oculus-touch-controls="hand: right"></a-entity>
+	<a-entity id="handl" oculus-touch-controls="hand: left"></a-entity>
+  <a-plane material="src:#tex_0;repeat:30 30" height="3" width="3" rotation="-90 0 0"></a-plane>
+</a-scene>
+
 <script type="module">
 import tree from "https://code4fukui.github.io/voxel-trees/index.js";
 import { deepEqual } from "https://js.sabae.cc/deepEqual.js";
 
 const size = 0.1;
 const snap = n => Math.floor(n / size) * size + size / 2;
+const snap3D = p => ({ x: snap(p.x), y: snap(p.y), z: snap(p.z) });
 const boxes = [];
 const putBox = (p, type = 0) => {
-  const p2 = { x: snap(p.x), y: snap(p.y), z: snap(p.z) };
   const box = document.createElement("a-box");
+  const p2 = snap3D(p);
   box.setAttribute("position", p2);
   box.setAttribute("width", size);
   box.setAttribute("height", size);
   box.setAttribute("depth", size);
   box.setAttribute("material", "src:#tex_" + type);
   scene.appendChild(box);
-  boxes.push([p, box]);
+  boxes.push([p2, box]);
 };
 const toggleBox = (p, type) => {
-  const idx = boxes.findIndex(b => deepEqual(b[0], p));
+  const p2 = snap3D(p);
+  const idx = boxes.findIndex(b => deepEqual(b[0], p2));
   if (idx >= 0) {
     scene.removeChild(boxes[idx][1]);
     boxes.splice(idx, 1);
@@ -43,30 +59,21 @@ const putTree = (p0, type = 0, height = 10) => {
     },
   });
 };
-/*
-putBox({ x: 0, y: 0, z: -1 });
-putBox({ x: 0, y: 1.5, z: -1 });
-toggleBox({ x: 0, y: 1.5, z: -1 });
-*/
 putTree({ x: 1, y: 0, z: -1 }, 0, 16);
 putTree({ x: -1, y: 0, z: -1 }, 1);
 
-AFRAME.registerComponent("input-listen", {
-	init: function() {
-		this.el.addEventListener("triggerdown", e => {
-			const p = this.object3D.getWorldPosition()
-      toggleBox(p);
-    });
-	},
-});
-</script></head><body>
-<a-scene id="scene">
-  <a-assets>
-    <img id="tex_0" src="./img/soil.png">
-    <img id="tex_1" src="./img/dry.png">
-    <img id="tex_2" src="./img/leaf.png">
-  </a-assets>
-	<a-entity oculus-touch-controls="hand: right" input-listen></a-entity>
-  <a-plane material="src:#tex_0;repeat:25 25" height="5" width="5" rotation="-90 0 0"></a-plane>
-</a-scene>
+const handler = function(evt) {
+  const p = this.object3D.getWorldPosition();
+  toggleBox(p);
+};
+handr.addEventListener("triggerdown", handler);
+handl.addEventListener("triggerdown", handler);
+handr.addEventListener("abuttondown", function() { toggleBox(this.object3D.getWorldPosition(), 1); });
+handr.addEventListener("bbuttondown", function() { toggleBox(this.object3D.getWorldPosition(), 2); });
+handr.addEventListener("gripdown", function() { toggleBox(this.object3D.getWorldPosition(), 3); });
+handl.addEventListener("xbuttondown", function() { toggleBox(this.object3D.getWorldPosition(), 1); });
+handl.addEventListener("ybuttondown", function() { toggleBox(this.object3D.getWorldPosition(), 2); });
+handl.addEventListener("gripdown", function() { toggleBox(this.object3D.getWorldPosition(), 3); });
+</script>
+  
 </body></html>
