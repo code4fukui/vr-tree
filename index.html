@@ -1,0 +1,72 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>boxcraft simplest for Oculus Quest</title>
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script type="module">
+import tree from "https://code4fukui.github.io/voxel-trees/index.js";
+import { deepEqual } from "https://js.sabae.cc/deepEqual.js";
+
+const size = 0.1;
+const snap = n => Math.floor(n / size) * size + size / 2;
+const boxes = [];
+const putBox = (p, type = 0) => {
+  const p2 = { x: snap(p.x), y: snap(p.y), z: snap(p.z) };
+  const box = document.createElement("a-box");
+  box.setAttribute("position", p2);
+  box.setAttribute("width", size);
+  box.setAttribute("height", size);
+  box.setAttribute("depth", size);
+  box.setAttribute("material", "src:#tex_" + type);
+  scene.appendChild(box);
+  boxes.push([p, box]);
+};
+const toggleBox = (p, type) => {
+  const idx = boxes.findIndex(b => deepEqual(b[0], p));
+  if (idx >= 0) {
+    scene.removeChild(boxes[idx][1]);
+    boxes.splice(idx, 1);
+  } else {
+    putBox(p, type);
+  }
+};
+const putTree = (p0, type = 0, height = 10) => {
+  tree({
+    position: { x: 0, y: 0, z: 0 },
+    bark: 1, // type
+    leaves: 2, // type
+    //treeType: "fractal", // not tree
+    treeType: ["subspace", "guybrush"][type], // guybrush: rounded
+    height,
+    //base: 7, // length of dry for subspace
+    //radius: 5, // for guybrush
+    setBlock: (p, type) => {
+      putBox({ x: p0.x + p[0] * size, y: p0.y + p[1] * size, z: p0.z + p[2] * size }, type);
+    },
+  });
+};
+/*
+putBox({ x: 0, y: 0, z: -1 });
+putBox({ x: 0, y: 1.5, z: -1 });
+toggleBox({ x: 0, y: 1.5, z: -1 });
+*/
+putTree({ x: 1, y: 0, z: -1 }, 0, 16);
+putTree({ x: -1, y: 0, z: -1 }, 1);
+
+AFRAME.registerComponent("input-listen", {
+	init: function() {
+		this.el.addEventListener("triggerdown", e => {
+			const p = this.object3D.getWorldPosition()
+      toggleBox(p);
+    });
+	},
+});
+</script></head><body>
+<a-scene id="scene">
+  <a-assets>
+    <img id="tex_0" src="./img/soil.png">
+    <img id="tex_1" src="./img/dry.png">
+    <img id="tex_2" src="./img/leaf.png">
+  </a-assets>
+	<a-entity oculus-touch-controls="hand: right" input-listen></a-entity>
+  <a-plane material="src:#tex_0;repeat:25 25" height="5" width="5" rotation="-90 0 0"></a-plane>
+</a-scene>
+</body></html>
